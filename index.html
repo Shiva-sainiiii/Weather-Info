@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weather App</title>
+  <title>Weather Info</title>
   <style>
     :root{--accent:#00d4ff}
     body {
@@ -60,6 +60,89 @@
     }
     .large{font-size:20px;font-weight:700}
     .muted{color:#9a9a9a;font-size:13px}
+    .owner {margin-top:18px;font-size:12px;color:#7a7a7a;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Weather Info</h2>
+    <div class="controls">
+      <input type="text" id="city" placeholder="Enter city or your name" />
+      <button id="btn" onclick="getWeather()">Get</button>
+    </div>
+    <p id="result" class="muted">Enter a city or name and press Get</p>
+
+    <p class="owner">🌐 Developed & Owned by <strong>Shiva Saini</strong></p>
+  </div>
+
+  <script>
+    const API_KEY = '0a19b8f1a7ee4f6284064244252711';
+    const btn = document.getElementById('btn');
+    const resultEl = document.getElementById('result');
+
+    async function getWeather(){
+      const rawCity = document.getElementById('city').value;
+      const city = rawCity.trim();
+      if(!city){
+        alert('Please enter something');
+        return;
+      }
+
+      // GF SPECIAL FEATURE
+      const gfNames = ["priya","sakshi","anushka","shruti","baby","jaan","ladki","gf","meri gf","my gf"];
+      const lower = city.toLowerCase();
+
+      if(gfNames.includes(lower)){
+        resultEl.innerHTML = `
+          <div class="large">🔥 9999°C</div>
+          <div><strong>Always Hotty 🔥</strong></div>
+        `;
+        return;
+      }
+
+      // Normal weather system
+      resultEl.textContent = 'Loading...';
+      btn.disabled = true;
+
+      try{
+        const res = await fetch(`https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${encodeURIComponent(city)}`);
+        const data = await res.json();
+
+        if(data && data.error){
+          throw new Error(data.error.message || 'Location not found');
+        }
+
+        const tempRaw = data.current && (data.current.temp_c ?? data.current.temp_f);
+        if(tempRaw === undefined || tempRaw === null) throw new Error('Temperature data not available');
+
+        const tempC = Number(data.current.temp_c);
+        if(Number.isNaN(tempC)) throw new Error('Invalid temperature value');
+
+        let emoji = '';
+        if(tempC > 37) emoji = '☀️';
+        else if(tempC < 37 && tempC > 20) emoji = '😎';
+        else if(tempC < 20) emoji = '❄️';
+        else if(tempC === 37) emoji = '☀️';
+        else if(tempC === 20) emoji = '😎';
+
+        const tempStr = tempC.toFixed(1);
+        const locationName = `${data.location.name}${data.location.region ? ', ' + data.location.region : ''} ${data.location.country ? ', ' + data.location.country : ''}`;
+
+        resultEl.innerHTML = `
+          <div class="large">${locationName}</div>
+          <div>Temperature: <strong>${tempStr}°C</strong> ${emoji}</div>
+          <div class="muted">Local time: ${data.location.localtime}</div>
+        `;
+
+      }catch(err){
+        resultEl.textContent = 'Error: ' + (err.message || 'Could not fetch weather');
+      }finally{
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>    .muted{color:#9a9a9a;font-size:13px}
   </style>
 </head>
 <body>
