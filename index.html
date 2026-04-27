@@ -3,143 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weather Info</title>
-  <style>
-    :root{--accent:#00d4ff}
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background: #0b0b0b;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #eaeaea;
-    }
-    .container {
-      background: rgba(255, 255, 255, 0.04);
-      padding: 28px;
-      border-radius: 14px;
-      backdrop-filter: blur(6px);
-      text-align: center;
-      width: 330px;
-      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
-      border: 1px solid rgba(255,255,255,0.03);
-    }
-    h2{margin:0 0 12px 0;font-weight:600}
-    .controls{display:flex;gap:8px;align-items:center;justify-content:center}
-    input {
-      flex:1;
-      padding: 10px 12px;
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 8px;
-      margin-bottom: 6px;
-      background: #141414;
-      color: #eaeaea;
-      outline: none;
-      font-size:14px;
-    }
-    input::placeholder { color:#888 }
-    button {
-      padding: 10px 12px;
-      border: none;
-      background: var(--accent);
-      color: #001;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-      min-width:110px;
-    }
-    button:disabled{opacity:.6;cursor:default}
-    #result {
-      margin-top: 16px;
-      font-size: 16px;
-      line-height: 1.4;
-      word-break:break-word;
-    }
-    .large{font-size:20px;font-weight:700}
-    .muted{color:#9a9a9a;font-size:13px}
-    .owner {margin-top:18px;font-size:12px;color:#7a7a7a;}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>Weather Info</h2>
-    <div class="controls">
-      <input type="text" id="city" placeholder="Enter city or your name" />
-      <button id="btn" onclick="getWeather()">Get</button>
-    </div>
-    <p id="result" class="muted">Enter a city or name and press Get</p>
+  <meta name="description" content="WeatherLens — Professional live weather dashboard with real-time forecasts, hourly data, and UV index.">
+  <meta name="theme-color" content="#03070f">
+  <title>WeatherLens | Live Weather Intelligence</title>
 
-    <p class="owner">🌐 Developed & Owned by <strong>Shiva Saini</strong></p>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="weather-default">
+
+  <!-- ░░ Dynamic Background Canvas ░░ -->
+  <div class="bg-canvas" aria-hidden="true">
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-orb orb-3"></div>
+    <div class="rain-container" id="rain-container"></div>
+    <div class="stars-layer" id="stars-layer"></div>
+    <div class="bg-noise"></div>
   </div>
 
-  <script>
-    const API_KEY = '0a19b8f1a7ee4f6284064244252711';
-    const btn = document.getElementById('btn');
-    const resultEl = document.getElementById('result');
+  <!-- ░░ Particles Overlay ░░ -->
+  <div id="particles-js" aria-hidden="true"></div>
 
-    async function getWeather(){
-      const rawCity = document.getElementById('city').value;
-      const city = rawCity.trim();
-      if(!city){
-        alert('Please enter something');
-        return;
-      }
+  <!-- ░░ Application Root ░░ -->
+  <div class="app-wrapper">
 
-      // GF SPECIAL FEATURE
-      const gfNames = ["parul", "chiku", "pratibha", "shiva ki lugai", "chillgozi",];
-      const lower = city.toLowerCase();
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <i class="fa-solid fa-satellite-dish"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">WeatherLens</span>
+          <span class="brand-tagline">Live Intelligence</span>
+        </div>
+      </div>
 
-      if(gfNames.includes(lower)){
-        resultEl.innerHTML = `
-          <div class="large">🔥 9999°C</div>
-          <div><strong>Always Hotty 🔥</strong></div>
-        `;
-        return;
-      }
+      <div class="header-controls">
+        <div class="unit-toggle" role="group" aria-label="Temperature unit">
+          <button class="unit-btn active" id="unit-c" data-unit="c" aria-pressed="true">°C</button>
+          <button class="unit-btn" id="unit-f" data-unit="f" aria-pressed="false">°F</button>
+        </div>
+        <button class="geo-btn" id="geo-btn" title="Use my current location" aria-label="Detect my location">
+          <i class="fa-solid fa-location-crosshairs"></i>
+        </button>
+      </div>
+    </header>
 
-      // Normal weather system
-      resultEl.textContent = 'Loading...';
-      btn.disabled = true;
+    <!-- Search -->
+    <section class="search-section" aria-label="City search">
+      <div class="search-container">
+        <div class="search-field">
+          <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+          <input
+            type="text"
+            id="city"
+            placeholder="Search any city in the world…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="City name"
+          >
+          <button class="clear-btn" id="clear-btn" title="Clear" aria-label="Clear input">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <button class="search-btn" id="btn" aria-label="Search weather">
+          <span>Search</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
 
-      try{
-        const res = await fetch(`https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${encodeURIComponent(city)}`);
-        const data = await res.json();
+      <!-- Recent searches chip list -->
+      <div class="recent-searches" id="recent-searches" aria-label="Recent searches"></div>
+    </section>
 
-        if(data && data.error){
-          throw new Error(data.error.message || 'Location not found');
-        }
+    <!-- Loading -->
+    <div class="state-panel loading-state hidden" id="loading-state" role="status" aria-live="polite">
+      <div class="loader-ring"></div>
+      <p>Fetching weather data…</p>
+    </div>
 
-        const tempRaw = data.current && (data.current.temp_c ?? data.current.temp_f);
-        if(tempRaw === undefined || tempRaw === null) throw new Error('Temperature data not available');
+    <!-- Error -->
+    <div class="state-panel error-state hidden" id="error-state" role="alert">
+      <div class="state-icon error-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <p id="error-msg">City not found. Please try again.</p>
+      <button class="retry-btn" id="retry-btn">Try Again</button>
+    </div>
 
-        const tempC = Number(data.current.temp_c);
-        if(Number.isNaN(tempC)) throw new Error('Invalid temperature value');
+    <!-- Empty -->
+    <div class="state-panel empty-state" id="empty-state">
+      <div class="state-icon pulse-icon">
+        <i class="fa-solid fa-cloud-sun"></i>
+      </div>
+      <h2>Discover Your Weather</h2>
+      <p>Search for any city or tap the crosshair to use your current location.</p>
+    </div>
 
-        let emoji = '';
-        if(tempC > 37) emoji = '☀️';
-        else if(tempC < 37 && tempC > 20) emoji = '😎';
-        else if(tempC < 20) emoji = '❄️';
-        else if(tempC === 37) emoji = '☀️';
-        else if(tempC === 20) emoji = '😎';
+    <!-- ░░ Weather Dashboard ░░ -->
+    <main class="weather-dashboard hidden" id="weather-content" aria-live="polite">
 
-        const tempStr = tempC.toFixed(1);
-        const locationName = `${data.location.name}${data.location.region ? ', ' + data.location.region : ''} ${data.location.country ? ', ' + data.location.country : ''}`;
+      <!-- Location row -->
+      <div class="location-row">
+        <div class="location-info">
+          <span class="location-pin" aria-hidden="true"><i class="fa-solid fa-location-dot"></i></span>
+          <div>
+            <h1 class="location-name" id="location-name">---</h1>
+            <p class="location-time" id="location-time">---</p>
+          </div>
+        </div>
+        <span class="condition-chip" id="condition-chip">---</span>
+      </div>
 
-        resultEl.innerHTML = `
-          <div class="large">${locationName}</div>
-          <div>Temperature: <strong>${tempStr}°C</strong> ${emoji}</div>
-          <div class="muted">Local time: ${data.location.localtime}</div>
-        `;
+      <!-- Main grid: Temp Hero + Stats -->
+      <div class="main-grid">
 
-      }catch(err){
-        resultEl.textContent = 'Error: ' + (err.message || 'Could not fetch weather');
-      }finally{
-        btn.disabled = false;
-      }
-    }
-  </script>
+        <!-- Temperature Hero -->
+        <div class="temp-hero glass-panel">
+          <div class="weather-icon-wrap">
+            <img id="current-icon" src="" alt="Current weather condition icon">
+            <div class="icon-halo" aria-hidden="true"></div>
+          </div>
+
+          <div class="temperature-row">
+            <span class="temp-value" id="current-temp">--</span>
+            <span class="temp-unit" id="temp-unit-label">°C</span>
+          </div>
+
+          <p class="feels-like-row">
+            <i class="fa-solid fa-thermometer-half" aria-hidden="true"></i>
+            Feels like <strong id="feels-like">--</strong>
+          </p>
+
+          <div class="high-low-row">
+            <div class="hl-item">
+              <i class="fa-solid fa-arrow-trend-up hl-up" aria-hidden="true"></i>
+              <span id="temp-max">--</span>
+            </div>
+            <span class="hl-divider" aria-hidden="true"></span>
+            <div class="hl-item">
+              <i class="fa-solid fa-arrow-trend-down hl-down" aria-hidden="true"></i>
+              <span id="temp-min">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+
+          <div class="stat-card glass-panel">
+            <span class="stat-icon si-blue"><i class="fa-solid fa-droplet"></i></span>
+            <div class="stat-body">
+              <p class="stat-label">Humidity</p>
+              <p class="stat-value" id="humidity">--%</p>
+              <div class="stat-bar"><div class="stat-fill fill-blue" id="humidity-bar" style="width:0%"></div></div>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <span class="stat-icon si-cyan"><i class="fa-solid fa-wind"></i></span>
+            <div class="stat-body">
+              <p class="stat-label">Wind Speed</p>
+              <p class="stat-value" id="wind">--</p>
+              <p class="stat-sub" id="wind-dir">---</p>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <span class="stat-icon si-amber"><i class="fa-solid fa-sun"></i></span>
+            <div class="stat-body">
+              <p class="stat-label">UV Index</p>
+              <p class="stat-value" id="uv-index">--</p>
+              <p class="stat-sub" id="uv-label">--</p>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <span class="stat-icon si-green"><i class="fa-solid fa-eye"></i></span>
+            <div class="stat-body">
+              <p class="stat-label">Visibility</p>
+              <p class="stat-value" id="visibility">--</p>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <span class="stat-icon si-purple"><i class="fa-solid fa-gauge-high"></i></span>
+            <div class="stat-body">
+              <p class="stat-label">Pressure</p>
+              <p class="stat-value" id="pressure">--</p>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <span class="stat-icon si-orange"><i class="fa-solid fa-sun"></i></span>
+            <div class="stat-body">
+              <p class="stat-label">Sun</p>
+              <p class="stat-value sm" id="sunrise">--</p>
+              <p class="stat-sub" id="sunset">--</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Hourly Forecast -->
+      <section class="forecast-block glass-panel" aria-label="Hourly forecast">
+        <div class="block-header">
+          <h2>Hourly Forecast</h2>
+          <span class="block-tag">Next 6 Hours</span>
+        </div>
+        <div class="hourly-scroll" id="hourly-list"></div>
+      </section>
+
+      <!-- 3-Day Forecast -->
+      <section class="forecast-block glass-panel" aria-label="3-day forecast">
+        <div class="block-header">
+          <h2>3-Day Forecast</h2>
+          <span class="block-tag">Daily Overview</span>
+        </div>
+        <div class="forecast-grid" id="forecast-list"></div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Crafted with <i class="fa-solid fa-heart" style="color:#fb7185" aria-label="love"></i> by <strong>Shiva Saini</strong></p>
+      <p class="footer-sub">Powered by WeatherAPI.com</p>
+    </footer>
+
+  </div><!-- /app-wrapper -->
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script src="script.js"></script>
 </body>
-  </html>
+</html>
