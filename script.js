@@ -461,7 +461,7 @@ function showEasterEgg() {
   el.innerHTML = `
     <div class="state-icon pulse-icon" style="font-size:44px;background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.25)">🔥</div>
     <h2 style="color:#fb7185;font-size:42px;font-family:var(--ff-display);letter-spacing:2px">9999°C</h2>
-    <p>Always Hotty — Shiva ki HeartBeat 🔥❤️</p>
+    <p>Always Hotty — Shiva ki Heartbeat 🔥❤️</p>
   `;
 }
 
